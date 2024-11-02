@@ -1,0 +1,28 @@
+# Dependency directories
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# Build output
+dist/
+build/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Debugger configurations
+.vscode/
+.idea/
+
+# OS and IDE specific files
+.DS_Store
+
+# Testing coverage
+coverage/
