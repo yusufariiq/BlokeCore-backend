@@ -185,7 +185,8 @@ const googleAuth = async (req, res) => {
                 id: user._id,
                 firstName: user.firstName,
                 lastName: user.lastName,
-                email: user.email
+                email: user.email,
+                phoneNumber: user.phoneNumber,
             }
         });
     } catch (error) {
@@ -196,4 +197,67 @@ const googleAuth = async (req, res) => {
     }
 }
 
-export { loginUser, signupUser, loginAdmin, googleAuth };
+const updateProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const updateData = req.body;
+
+        const errors = {};
+
+        if (updateData.firstName !== undefined && updateData.firstName.trim().length < 2) {
+            errors.firstName = 'First name must be at least 2 characters long';
+        }
+
+        if (updateData.lastName !== undefined && updateData.lastName.trim().length < 2) {
+            errors.lastName = 'Last name must be at least 2 characters long';
+        }
+
+        if (updateData.email !== undefined) {
+            if (!validator.isEmail(updateData.email)) {
+                errors.email = 'Please provide a valid email address';
+            } else {
+                const existingUser = await userModel.findOne({ 
+                    email: updateData.email,
+                    _id: { $ne: userId }
+                });
+                if (existingUser) {
+                    errors.email = 'Email is already in use';
+                }
+            }
+        }
+
+        if (updateData.phoneNumber !== undefined && !validatePhoneNumber(updateData.phoneNumber)) {
+            errors.phoneNumber = 'Please provide a valid Indonesian phone number starting with 08';
+        }
+
+        if (Object.keys(errors).length > 0) {
+            return res.status(400).json({ errors });
+        }
+
+        const updatedUser = await userModel.findByIdAndUpdate(
+            userId,
+            { $set: updateData },
+            { new: true, select: '-password' }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.status(200).json({
+            msg: 'Profile updated successfully',
+            user: {
+                id: updatedUser._id,
+                firstName: updatedUser.firstName,
+                lastName: updatedUser.lastName,
+                email: updatedUser.email,
+                phoneNumber: updatedUser.phoneNumber
+            }
+        });
+    } catch (error) {
+        console.error('Update Profile Error:', error);
+        res.status(500).json({ error: 'Failed to update profile. Please try again.' });
+    }
+};
+
+export { loginUser, signupUser, loginAdmin, googleAuth, updateProfile };
