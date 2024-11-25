@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const productSchema = new mongoose.Schema({
     id: {
@@ -20,10 +20,10 @@ const productSchema = new mongoose.Schema({
       required: true,
       min: 0,
     },
-    images: [{
-      type: Array,
+    images: {
+      type: [String],
       required: true,
-    }],
+    },
     imageAlt: {
       type: String,
     },
@@ -47,11 +47,11 @@ const productSchema = new mongoose.Schema({
         required: true,
         enum: ['Brand New', 'Excvelent', 'Very Good', 'Good', 'Mint'],
       },
-      size: [{
-        type: Array,
+      size: {
+        type: [String],
         required: true,
         enum: ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-      }],
+      },
       brand: {
         type: String,
         required: true,
@@ -98,6 +98,6 @@ const productSchema = new mongoose.Schema({
     versionKey: false,
   });
 
-  const productModel = mongoose.models.product || mongoose.model('product', productSchema);
+const productModel = mongoose.models.product || mongoose.model('product', productSchema);
 
-  export default productModel;
+export default productModel;
