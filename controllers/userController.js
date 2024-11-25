@@ -143,10 +143,6 @@ const loginUser = async (req, res) => {
     }
 }
 
-const loginAdmin = async (req, res) => {
-    
-}
-
 const googleAuth = async (req, res) => {
     try {
         const { token } = req.body;
@@ -260,4 +256,4 @@ const updateProfile = async (req, res) => {
     }
 };
 
-export { loginUser, signupUser, loginAdmin, googleAuth, updateProfile };
+export { loginUser, signupUser, googleAuth, updateProfile };
