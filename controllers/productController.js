@@ -139,6 +139,70 @@ const removeProduct = async (req, res) => {
     }
 }
 
+const updateProduct = async (req, res) => {
+    try {
+        const{id} = req.params;
+        let updateData = { ...req.body };
+
+        if (typeof updateData.details === 'string') {
+            updateData.details = JSON.parse(updateData.details);
+        }
+        if (typeof updateData.metadata === 'string') {
+            updateData.metadata = JSON.parse(updateData.metadata);
+        }
+
+        if (updateData.details && updateData.details.condition) {
+            updateData.details.condition = updateData.details.condition
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+                .join(' ');
+        }
+
+        const newImages = [];
+        for (let i = 1; i <= 4; i++) {
+            const image = req.files[`image${i}`] && req.files[`image${i}`][0];
+            if (image) {
+                const result = await cloudinary.uploader.upload(image.path, {
+                    resource_type: 'image'
+                });
+                newImages.push(result.secure_url);
+            }
+        }
+
+        // Only update images if new images were uploaded
+        if (newImages.length > 0) {
+            updateData.images = newImages;
+        }
+
+        const updatedProduct = await productModel.findOneAndUpdate(
+            { id: id },
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedProduct) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Product updated successfully",
+            product: updatedProduct
+        });
+        
+    } catch (error) {
+        console.error('Error in updateProduct:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+            stack: error.stack
+        });
+    }
+}
+
 const singleProduct = async (req, res) => {
     try {
         const { productId } = req.body
@@ -152,4 +216,4 @@ const singleProduct = async (req, res) => {
     }
 }
 
-export { addProduct, listProduct, removeProduct, singleProduct }
+export { addProduct, listProduct, removeProduct, updateProduct, singleProduct }
