@@ -6,32 +6,9 @@ const addProduct = async (req, res) => {
     try {
         // Log entire request body for debugging
         console.log('Request Body:', JSON.stringify(req.body, null, 2));
+        console.log('Uploaded Files:', req.files);
         
-         // Attempt to parse details if it's a string
-        let details = req.body.details;
-        if (typeof details === 'string') {
-            try {
-                details = JSON.parse(details);
-            } catch (parseError) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid details format. Must be a valid JSON object.",
-                });
-            }
-        }
-
-        // Attempt to parse metadata if it's a string
-        let metadata = req.body.metadata;
-        if (typeof metadata === 'string') {
-            try {
-                metadata = JSON.parse(metadata);
-            } catch (parseError) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid metadata format. Must be a valid JSON object.",
-                });
-            }
-        }
+        let details = JSON.parse(req.body.details);
 
         const yearValue = details?.year ? parseInt(details.year, 10) : undefined;
         if (!yearValue || isNaN(yearValue)) {
@@ -43,14 +20,7 @@ const addProduct = async (req, res) => {
             });
         }
 
-        const {
-            name,
-            description,
-            price,
-            category,
-            subCategory,
-            imageAlt,
-        } = req.body;
+        const metadata = JSON.parse(req.body.metadata);
 
         // Handle image uploads
         const image1 = req.files.image1 && req.files.image1[0];
@@ -93,13 +63,12 @@ const addProduct = async (req, res) => {
         // Create new product document
         const newProduct = new productModel({
             id: nanoid(8),
-            name: name,
-            description: description || '',
-            price: parseFloat(price),
+            name: req.body.name,
+            description: req.body.description || '',
+            price: parseFloat(req.body.price),
             images: imagesUrl,
-            imageAlt: imageAlt || '',
-            category: category,
-            subCategory: subCategory,
+            category: req.body.category,
+            subCategory: req.body.subCategory,
             details: {
                 year: yearValue,
                 condition: details.condition,
@@ -113,7 +82,7 @@ const addProduct = async (req, res) => {
             metadata: {
                 team: metadata.team,
                 league: metadata.league,
-                season: metadata.season
+                season: metadata.season,
             }
         });
 
