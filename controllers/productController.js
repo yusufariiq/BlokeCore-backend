@@ -216,4 +216,45 @@ const singleProduct = async (req, res) => {
     }
 }
 
-export { addProduct, listProduct, removeProduct, updateProduct, singleProduct }
+const getProductsByCategory = async (req, res) => {
+    try {
+        const { category, subCategory } = req.query;
+        let query = {};
+
+        if (category) {
+            query.category = category;
+        }
+
+        if (subCategory) {
+            query.subCategory = subCategory;
+        }
+
+        const products = await productModel.find(query);
+        res.json({ success: true, products });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+const getLatestProducts = async (req, res) => {
+    try {
+        const latestProducts = await productModel.find({
+            $or: [
+                { latest: true },
+                { 'details.isLatest': true }
+            ]
+        });
+        res.json({ success: true, products: latestProducts });
+    } catch (error) {
+        console.error('Error in getLatestProducts:', error);
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export { addProduct, listProduct, removeProduct, updateProduct, singleProduct, getProductsByCategory, getLatestProducts }
