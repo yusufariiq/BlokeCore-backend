@@ -62,7 +62,7 @@ const addProduct = async (req, res) => {
 
         // Create new product document
         const newProduct = new productModel({
-            id: nanoid(8),
+            id: `PRD-${nanoid(4)}-${nanoid(4)}`,
             name: req.body.name,
             description: req.body.description || '',
             price: parseFloat(req.body.price),

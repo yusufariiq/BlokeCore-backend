@@ -1,6 +1,10 @@
 import mongoose from 'mongoose'
 
 const orderSchema = new mongoose.Schema({
+    orderId: {
+        type: String,
+        required: true,
+    },
     userId: {
         type: String,
         required: true,
@@ -14,6 +18,10 @@ const orderSchema = new mongoose.Schema({
         required: true,
     },
     shippingAddress: {
+        email: {
+            type: String,
+            required: true,
+        },
         firstName: {
             type: String,
             required: true,

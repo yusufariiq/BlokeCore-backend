@@ -1,12 +1,14 @@
 import Order from '../models/orderModel.js';
 import user from '../models/userModel.js'
+import { nanoid } from "nanoid";
 
-// order payment with BCA & COD
+// order payment with COD
 const placeOrder = async (req, res) => {
     try {
         const { userId, items, amount, shippingAddress, paymentMethod, date } = req.body;
 
         const newOrder = new Order({
+            orderId: `TRX-${nanoid(4)}-${nanoid(6)}`, 
             userId,
             items,
             amount,
