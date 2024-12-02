@@ -6,20 +6,20 @@ import {
     userOrders,
     updateStatus,
 } from '../controllers/orderController.js'
-import authAdmin from '../middleware/authAdmin.js'
 import authenticateUser from '../middleware/authUser.js'
+import authenticateAdmin from '../middleware/authAdmin.js'
 
 const orderRouter = express.Router()
 
 // Admin features
-orderRouter.post('/list', authAdmin, allOrders)
-orderRouter.post('/status', authAdmin, updateStatus)
+orderRouter.post('/list', authenticateAdmin, allOrders)
+orderRouter.post('/status', authenticateAdmin, updateStatus)
 
 // User Payment features
 orderRouter.post('/place', authenticateUser, placeOrder) //COD & BCA
 orderRouter.post('/stripe', authenticateUser, placeOrderStripe) //stripe
 
 // User features
-orderRouter.post('/orders', authenticateUser, userOrders)
+orderRouter.post('/user-orders', authenticateUser, userOrders)
 
 export default orderRouter

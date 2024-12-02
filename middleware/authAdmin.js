@@ -2,23 +2,54 @@ import jwt from "jsonwebtoken"
 
 const authenticateAdmin = async (req, res, next) => {
     try {
-        const { token } = req.headers
-        if (!token) {
-            return res.json({success: false, message: "Not authorized login again"})
+        const authHeader = req.headers.authorization;
+        if (!authHeader) {
+            return res.status(401).json({
+                success: false, 
+                message: "Authorization header missing"
+            });
         }
-        const token_decode = jwt.verify(token, process.env.JWT_SECRET);
+
+        const token = authHeader.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({
+                success: false, 
+                message: "Token not provided"
+            });
+        }
+
+        // Verify token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        if (token_decode !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD){
-            return res.json({success: false, message: "Wrong credentials"})
+        // Check for admin flag
+        if (!decoded.isAdmin) {
+            return res.status(403).json({
+                success: false, 
+                message: "Access denied: Admin rights required"
+            });
         }
 
         next()
     } catch (error) {
-        console.log(error)
+        console.error('Authentication error:', error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                success: false, 
+                message: "Invalid token"
+            });
+        }
+
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false, 
+                message: "Token expired"
+            });
+        }
+
         res.status(500).json({
             success: false,
-            message: error.message,
-            stack: error.stack
+            message: "Authentication error",
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 }

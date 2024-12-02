@@ -51,10 +51,16 @@ const placeOrderStripe = async (req, res) => {
 // all order in admin dashboard
 const allOrders = async (req, res) => {
     try {
-        const orders = await Order.find();
-        res.status(200).json(orders);
+        const orders = await Order.find({});
+        res.status(200).json({
+            success: true,
+            orders: orders
+        });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(500).json({ 
+            success: false,
+            message: error.message 
+        });
     }
 }
 
@@ -73,10 +79,16 @@ const userOrders = async (req, res) => {
 const updateStatus = async(req, res) => {
     try {
         const { orderId, status } = req.body;
-        const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true });
-        res.status(200).json(order);
+        const order = await Order.findByIdAndUpdate(orderId, { status }, { new: true } );
+        res.status(200).json({
+            success: true,
+            order: order
+        });
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(400).json({ 
+            success: false,
+            message: error.message 
+        });
     }
 }
 
