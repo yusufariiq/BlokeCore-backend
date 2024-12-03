@@ -3,6 +3,12 @@ import bcrypt from 'bcrypt';
 import validator from 'validator';
 import { generateToken } from '../config/auth.js';
 
+import 'dotenv/config'
+import { OAuth2Client } from 'google-auth-library';
+
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(CLIENT_ID);
+
 const validatePassword = (password) => {
     const minLength = 8;
     const hasUpperCase = /[A-Z]/.test(password);
@@ -20,10 +26,6 @@ const validatePassword = (password) => {
     return errors;
 };
 
-const validatePhoneNumber = (phoneNumber) => {
-    const phoneRegex = /^08\d{8,11}$/;
-    return phoneRegex.test(phoneNumber);
-};
 
 const signupUser = async (req, res) => {
     try {
@@ -47,9 +49,6 @@ const signupUser = async (req, res) => {
         if (!email || !validator.isEmail(email)) {
             errors.email = 'Please provide a valid email address';
         }
-        if (!phoneNumber || !validatePhoneNumber(phoneNumber)) {
-            errors.phoneNumber = 'Please provide a valid Indonesian phone number starting with 08';
-        }
         if (!agreedToPolicy) {
             errors.policy = 'You must agree to the privacy policy';
         }
@@ -59,19 +58,31 @@ const signupUser = async (req, res) => {
             errors.password = passwordErrors;
         }
 
+        if (!firstName || !lastName || !email || !password || !phoneNumber) {
+            return res.status(400).json({ 
+            errors: { 
+                general: 'All fields are required' 
+            } 
+            });
+        }
+
         if (Object.keys(errors).length > 0) {
             return res.status(400).json({ errors });
         }
-
+  
+        // Check if user already exists
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
-            return res.status(400).json({
-                error: "Email already registered"
+            return res.status(400).json({ 
+            errors: { 
+                email: 'Email is already registered' 
+            } 
             });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-
+  
+        // Create new user
         const newUser = new userModel({
             firstName,
             lastName,
@@ -81,14 +92,11 @@ const signupUser = async (req, res) => {
             agreedToPolicy,
             provider: 'local'
         });
-
+  
         await newUser.save();
-        
-        const token = generateToken(newUser._id);
-        
+    
         res.status(201).json({ 
-            msg: "User registered successfully",
-            token,
+            message: 'User registered successfully',
             user: {
                 id: newUser._id,
                 firstName: newUser.firstName,
@@ -101,7 +109,7 @@ const signupUser = async (req, res) => {
         console.error('Signup Error:', error);
         res.status(500).json({ error: "Registration failed. Please try again." });
     }
-}
+  };
 
 const loginUser = async (req, res) => {
     try {
@@ -147,44 +155,39 @@ const loginUser = async (req, res) => {
 const googleAuth = async (req, res) => {
     try {
         const { token } = req.body;
-        
-        if (!token) {
-            return res.status(400).json({ 
-                errors: { 
-                    token: 'Google token is required' 
-                }
-            });
-        }
 
-        const payload = await verifyGoogleToken(token);
-        
-        let user = await userModel.findOne({ email: payload.email });
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+        const { email, given_name, family_name } = payload;
+
+        let user = await userModel.findOne({ email });
         
         if (!user) {
             user = new userModel({
-                firstName: payload.given_name,
-                lastName: payload.family_name,
-                email: payload.email,
-                password: await bcrypt.hash(Math.random().toString(36), 10),
-                phoneNumber: '',
+                email,
+                firstName: given_name,
+                lastName: family_name,
                 agreedToPolicy: true,
                 provider: 'google'
             });
             await user.save();
         }
 
-        const jwtToken = generateToken(user._id);
+        const authToken = generateToken(user);
 
         res.status(200).json({
-            msg: "Google authentication successful",
-            token: jwtToken,
             user: {
-                id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                phoneNumber: user.phoneNumber,
-            }
+            id: user._id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            requirePhoneNumber: !user.phoneNumber && user.provider === 'local'
+            },
+            token: authToken
         });
     } catch (error) {
         console.error('Google Auth Error:', error);
@@ -223,8 +226,8 @@ const updateProfile = async (req, res) => {
             }
         }
 
-        if (updateData.phoneNumber !== undefined && !validatePhoneNumber(updateData.phoneNumber)) {
-            errors.phoneNumber = 'Please provide a valid Indonesian phone number starting with 08';
+        if (updateData.phoneNumber === '') {
+            errors.phoneNumber = 'Please provide a valid phone number';
         }
 
         if (Object.keys(errors).length > 0) {

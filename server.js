@@ -17,7 +17,11 @@ connectDB()
 
 // Middleware
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+}))
 connectCloudinary()
 
 // API endpoints

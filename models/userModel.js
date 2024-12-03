@@ -20,12 +20,16 @@ const userSchema = new mongoose.Schema({
     },
     password: { 
         type: String,
-        required: true
+        required: function() {
+            return this.provider === 'local';
+        }
     },
     phoneNumber: {
         type: String,
-        required: true,
-        trim: true
+        required: function() {
+            return this.provider === 'local';
+        },
+        trim: true,
     },
     agreedToPolicy: {
         type: Boolean,
