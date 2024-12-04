@@ -1,10 +1,10 @@
 import express from 'express'
 import {
     placeOrder,
-    placeOrderStripe,
     allOrders,
     userOrders,
     updateStatus,
+    placeOrderMidtrans,
 } from '../controllers/orderController.js'
 import authenticateUser from '../middleware/authUser.js'
 import authenticateAdmin from '../middleware/authAdmin.js'
@@ -17,7 +17,7 @@ orderRouter.post('/status', authenticateAdmin, updateStatus)
 
 // User Payment features
 orderRouter.post('/place', authenticateUser, placeOrder) //COD & BCA
-orderRouter.post('/stripe', authenticateUser, placeOrderStripe) //stripe
+orderRouter.post('/midtrans', authenticateUser, placeOrderMidtrans) //midtrans
 
 // User features
 orderRouter.post('/user-orders', authenticateUser, userOrders)
