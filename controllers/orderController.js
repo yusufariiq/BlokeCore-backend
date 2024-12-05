@@ -40,7 +40,6 @@ const placeOrderMidtrans = async (req, res) => {
             selectedShipping,
             status: 'Order Placed',
             paymentMethod: paymentMethod,
-            payment: true,
             date: Date.now()
         });
 
@@ -48,7 +47,7 @@ const placeOrderMidtrans = async (req, res) => {
         const transactionDetails = {
             transaction_details: {
                 order_id: newOrder.orderId,
-                gross_amount: roundedAmount, // Ensure whole number
+                gross_amount: roundedAmount,
             },
             customer_details: {
                 first_name: shippingAddress.firstName,
@@ -59,13 +58,13 @@ const placeOrderMidtrans = async (req, res) => {
             item_details: [
                 ...items.map((item) => ({
                     id: item.id,
-                    price: Math.round(item.price), // Round item prices
+                    price: Math.round(item.price),
                     quantity: item.quantity,
                     name: item.name,
                 })),
                 {
                     id: 'shipping',
-                    price: roundedShippingPrice, // Round shipping price
+                    price: roundedShippingPrice,
                     quantity: 1,
                     name: 'Shipping Cost'
                 }
