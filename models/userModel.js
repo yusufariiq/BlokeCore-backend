@@ -35,8 +35,8 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    cartData: { 
-        type: Object,
+    cart: {
+        type: mongoose.Schema.Types.Mixed,
         default: {}
     },
     provider: {
