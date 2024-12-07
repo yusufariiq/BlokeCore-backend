@@ -5,6 +5,7 @@ import {
     userOrders,
     updateStatus,
     placeOrderMidtrans,
+    getOrderDetails,
 } from '../controllers/orderController.js'
 import authenticateUser from '../middleware/authUser.js'
 import authenticateAdmin from '../middleware/authAdmin.js'
@@ -21,5 +22,8 @@ orderRouter.post('/midtrans', authenticateUser, placeOrderMidtrans) //midtrans
 
 // User features
 orderRouter.post('/user-orders', authenticateUser, userOrders)
+
+// User order details
+orderRouter.get('/details/:orderId', authenticateUser, getOrderDetails)
 
 export default orderRouter
