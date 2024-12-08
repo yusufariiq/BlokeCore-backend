@@ -216,45 +216,51 @@ const singleProduct = async (req, res) => {
     }
 }
 
-const getProductsByCategory = async (req, res) => {
+const searchProducts = async (req, res) => {
     try {
-        const { category, subCategory } = req.query;
-        let query = {};
+        const { q } = req.query;
 
-        if (category) {
-            query.category = category;
+        if (!q){
+            return res.status(400).json({
+                success: false,
+                message: "Search query is required"
+            })
         }
 
-        if (subCategory) {
-            query.subCategory = subCategory;
-        }
+        const searchRegex = new RegExp(q, 'i');
 
-        const products = await productModel.find(query);
-        res.json({ success: true, products });
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message,
-        });
-    }
-};
-
-const getLatestProducts = async (req, res) => {
-    try {
-        const latestProducts = await productModel.find({
+        const products = await productModel.find({
             $or: [
-                { latest: true },
-                { 'details.isLatest': true }
+                { name: searchRegex },
+                { description: searchRegex },
+                { category: searchRegex },
+                { subCategory: searchRegex },
+                { 'details.brand': searchRegex },
+                { 'details.type': searchRegex },
+                { 'metadata.team': searchRegex },
+                { 'metadata.league': searchRegex },
             ]
         });
-        res.json({ success: true, products: latestProducts });
+
+        res.json({
+            success: true,
+            products: products,
+            resultCount: products.length
+        });
     } catch (error) {
-        console.error('Error in getLatestProducts:', error);
+        console.error('Error in searchProducts:', error);
         res.status(500).json({
             success: false,
-            message: error.message,
+            message: error.message
         });
     }
-};
+}
 
-export { addProduct, listProduct, removeProduct, updateProduct, singleProduct, getProductsByCategory, getLatestProducts }
+export { 
+    addProduct,
+    listProduct,
+    removeProduct,
+    updateProduct,
+    searchProducts,
+    singleProduct,
+}
