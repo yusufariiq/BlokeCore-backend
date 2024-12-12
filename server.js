@@ -11,6 +11,7 @@ import statsRouter from './routes/statsRoutes.js'
 import chartRouter from './routes/chartRoutes.js'
 import paymentRouter from './routes/paymentRoutes.js'
 import cartRouter from './routes/cartRoutes.js'
+import contactRouter from './routes/contactRoutes.js'
 
 // App config
 const app = express()
@@ -38,6 +39,8 @@ app.use('/api/chart-data', chartRouter);
 app.use('/api/payment', paymentRouter);
 
 app.use('/api/cart', cartRouter);
+
+app.use('/api/contact', contactRouter);
 
 app.get('/', (req, res) => {
     res.send("API Working");
