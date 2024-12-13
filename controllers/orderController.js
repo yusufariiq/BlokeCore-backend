@@ -43,7 +43,6 @@ const placeOrderMidtrans = async (req, res) => {
             date: Date.now()
         });
 
-        // Generate midtrans transaction details
         const transactionDetails = {
             transaction_details: {
                 order_id: newOrder.orderId,
@@ -73,7 +72,6 @@ const placeOrderMidtrans = async (req, res) => {
 
         console.log(transactionDetails);
 
-        // create midtrans transaction
         const transaction = await snap.createTransaction(transactionDetails);
 
         await newOrder.save();

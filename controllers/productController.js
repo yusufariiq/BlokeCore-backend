@@ -4,7 +4,6 @@ import { nanoid } from "nanoid";
 
 const addProduct = async (req, res) => {
     try {
-        // Log entire request body for debugging
         console.log('Request Body:', JSON.stringify(req.body, null, 2));
         console.log('Uploaded Files:', req.files);
         
@@ -22,16 +21,13 @@ const addProduct = async (req, res) => {
 
         const metadata = JSON.parse(req.body.metadata);
 
-        // Handle image uploads
         const image1 = req.files.image1 && req.files.image1[0];
         const image2 = req.files.image2 && req.files.image2[0];
         const image3 = req.files.image3 && req.files.image3[0];
         const image4 = req.files.image4 && req.files.image4[0];
         
-        // Filter out undefined images
         const images = [image1, image2, image3, image4].filter(item => item !== undefined);
 
-        // Upload images to Cloudinary and get URLs
         const imagesUrl = await Promise.all(
             images.map(async (item) => {
                 const result = await cloudinary.uploader.upload(item.path, {
@@ -41,7 +37,6 @@ const addProduct = async (req, res) => {
             })
         );
 
-        // Validate required details and metadata
         const requiredDetailsFields = ['condition', 'type', 'brand'];
         const missingDetailsFields = requiredDetailsFields.filter(field => !details[field]);
         if (missingDetailsFields.length > 0) {
@@ -60,7 +55,6 @@ const addProduct = async (req, res) => {
             });
         }
 
-        // Create new product document
         const newProduct = new productModel({
             id: `PRD-${nanoid(4)}-${nanoid(4)}`,
             name: req.body.name,
@@ -86,10 +80,8 @@ const addProduct = async (req, res) => {
             }
         });
 
-        // Save the product to database
         const savedProduct = await newProduct.save();
 
-        // Send success response
         res.status(201).json({
             success: true,
             message: "Product added successfully",
@@ -98,7 +90,6 @@ const addProduct = async (req, res) => {
 
     } catch (error) {
         console.error('Error in addProduct:', error);
-        // Handle other errors
         res.status(500).json({
             success: false,
             message: error.message,
@@ -169,7 +160,6 @@ const updateProduct = async (req, res) => {
             }
         }
 
-        // Only update images if new images were uploaded
         if (newImages.length > 0) {
             updateData.images = newImages;
         }
