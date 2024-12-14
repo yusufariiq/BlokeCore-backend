@@ -18,10 +18,8 @@ const authenticateAdmin = async (req, res, next) => {
             });
         }
 
-        // Verify token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Check for admin flag
         if (!decoded.isAdmin) {
             return res.status(403).json({
                 success: false, 

@@ -6,14 +6,12 @@ import midtransClient from 'midtrans-client'
 const SERVER_KEY = process.env.MIDTRANS_SERVER_KEY
 const CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY
 
-// initialize Midtrans snap API
 const snap = new midtransClient.Snap({
     isProduction: false,
     serverKey: SERVER_KEY,
     clientKey: CLIENT_KEY,
 })
 
-// order payment with midtrans
 const placeOrderMidtrans = async (req, res) => {
     try {
         const { 
@@ -26,7 +24,6 @@ const placeOrderMidtrans = async (req, res) => {
             shippingPrice
         } = req.body;
 
-        // Round amount and prices to whole numbers
         const roundedAmount = Math.round(amount);
         const roundedShippingPrice = Math.round(shippingPrice);
 
@@ -90,7 +87,6 @@ const placeOrderMidtrans = async (req, res) => {
     }
 }
 
-// order payment with COD
 const placeOrder = async (req, res) => {
     try {
         const { 
@@ -125,7 +121,6 @@ const placeOrder = async (req, res) => {
     }
 }
 
-// all order in admin dashboard
 const allOrders = async (req, res) => {
     try {
         const orders = await Order.find({});
@@ -141,7 +136,6 @@ const allOrders = async (req, res) => {
     }
 }
 
-// user particular orders in frontend
 const userOrders = async (req, res) => {
     try {
         const { userId } = req.body;
@@ -152,7 +146,6 @@ const userOrders = async (req, res) => {
     }
 }
 
-// update order status
 const updateStatus = async(req, res) => {
     try {
         const { orderId, status } = req.body;
