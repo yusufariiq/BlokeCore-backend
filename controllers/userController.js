@@ -1,12 +1,20 @@
 import userModel from '../models/userModel.js';
 import bcrypt from 'bcrypt';
 import validator from 'validator';
-import { generateToken } from '../config/auth.js';
-
+import nodemailer from 'nodemailer';
+import jwt from 'jsonwebtoken';
 import 'dotenv/config'
+
+import { generateToken } from '../config/auth.js';
 import { OAuth2Client } from 'google-auth-library';
 
+import resetPasswordEmailTemplate from '../utils/resetPasswordTemplate.js';
+
+const FRONTEND_URL = process.env.FRONTEND_URL
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const EMAIL_USER = process.env.EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS;
+
 const client = new OAuth2Client(CLIENT_ID);
 
 const validatePassword = (password) => {
@@ -260,4 +268,76 @@ const updateProfile = async (req, res) => {
     }
 };
 
-export { loginUser, signupUser, googleAuth, updateProfile };
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    try {
+        const user = await userModel.findOne({ email });
+        if (!user){
+            return res.status(404).json({ message: 'User not found.'})
+        }
+
+        const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        const transporter = nodemailer.createTransport({
+            service: 'Gmail',
+            auth: {
+                user: EMAIL_USER, 
+                pass: EMAIL_PASS,
+            },
+        });
+
+        const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}`
+        const emailHtml = resetPasswordEmailTemplate(resetLink);
+
+        await transporter.sendMail({
+            from: EMAIL_USER,
+            to: email,
+            subject: 'Password Reset Request',
+            html: emailHtml,
+        });
+
+        res.status(200).json({ message: 'Reset link sent to your email.' });
+    } catch (error) {
+        console.error('Forgot Password Error:', error);
+        res.status(500).json({ message: 'Server error occurred while processing password reset.' });
+    }
+}
+
+const resetPassword = async (req, res) => {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+        return res.status(400).json({ message: 'Token and new password are required.' });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+        
+        const user = await userModel.findById(decoded.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const passwordErrors = validatePassword(password);
+        if (passwordErrors.length > 0) {
+            return res.status(400).json({ 
+                message: 'Invalid password',
+                errors: passwordErrors 
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ message: 'Password reset successfully' });
+    } catch (error) {
+        console.error('Reset Password Error:', error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+        res.status(500).json({ message: 'Server error occurred while resetting password' });
+    }
+}
+
+export { loginUser, signupUser, googleAuth, updateProfile, forgotPassword, resetPassword };

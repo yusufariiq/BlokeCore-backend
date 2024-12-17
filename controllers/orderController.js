@@ -37,6 +37,7 @@ const placeOrderMidtrans = async (req, res) => {
             selectedShipping,
             status: 'Order Placed',
             paymentMethod: paymentMethod,
+            payment: true,
             date: Date.now()
         });
 
