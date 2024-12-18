@@ -1,7 +1,8 @@
 import Order from '../models/orderModel.js';
 import user from '../models/userModel.js'
-import { nanoid } from "nanoid";
 import midtransClient from 'midtrans-client'
+import { nanoid } from "nanoid";
+import { updateProductStock } from './productController.js';
 
 const SERVER_KEY = process.env.MIDTRANS_SERVER_KEY
 const CLIENT_KEY = process.env.MIDTRANS_CLIENT_KEY
@@ -23,6 +24,17 @@ const placeOrderMidtrans = async (req, res) => {
             selectedShipping,
             shippingPrice
         } = req.body;
+
+        for (const item of items) {
+            try {
+                await updateProductStock(item.id, item.quantity);
+            } catch (stockError) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Stock update failed for product ${item.id}: ${stockError.message}`
+                });
+            }
+        }
 
         const roundedAmount = Math.round(amount);
         const roundedShippingPrice = Math.round(shippingPrice);
@@ -99,6 +111,17 @@ const placeOrder = async (req, res) => {
             shippingPrice,
             selectedShipping,
         } = req.body;
+
+        for (const item of items) {
+            try {
+                await updateProductStock(item.id, item.quantity);
+            } catch (stockError) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Stock update failed for product ${item.id}: ${stockError.message}`
+                });
+            }
+        }
 
         const newOrder = new Order({
             orderId: `TRX-${nanoid(4)}-${nanoid(6)}`, 

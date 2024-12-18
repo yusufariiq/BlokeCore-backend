@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import productModel from "../models/productModel.js";
+import mongoose from "mongoose";
 import { nanoid } from "nanoid";
 
 const addProduct = async (req, res) => {
@@ -55,11 +56,14 @@ const addProduct = async (req, res) => {
             });
         }
 
+        const stock = req.body.stock ? parseInt(req.body.stock, 10) : 5;
+
         const newProduct = new productModel({
             id: `PRD-${nanoid(4)}-${nanoid(4)}`,
             name: req.body.name,
             description: req.body.description || '',
             price: parseFloat(req.body.price),
+            stock: Math.max(0, stock),
             images: imagesUrl,
             category: req.body.category,
             subCategory: req.body.subCategory,
@@ -138,9 +142,15 @@ const updateProduct = async (req, res) => {
         if (typeof updateData.details === 'string') {
             updateData.details = JSON.parse(updateData.details);
         }
+
         if (typeof updateData.metadata === 'string') {
             updateData.metadata = JSON.parse(updateData.metadata);
         }
+
+        if (updateData.stock !== undefined) {
+            updateData.stock = Math.max(0, parseInt(updateData.stock, 10));
+        }
+
 
         if (updateData.details && updateData.details.condition) {
             updateData.details.condition = updateData.details.condition
@@ -190,6 +200,36 @@ const updateProduct = async (req, res) => {
             message: error.message,
             stack: error.stack
         });
+    }
+}
+
+const updateProductStock = async (productId, quantity) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const product = await productModel.findOne({ id: productId }).session(session);
+
+        if (!product) {
+            throw new Error('Product not found');
+        }
+
+        if (product.stock < quantity) {
+            throw new Error(`Insufficient stock for product ${productId}. Available: ${product.stock}, Requested: ${quantity}`);
+        }
+
+        product.stock = Math.max(0, product.stock - quantity);
+
+        await product.save({ session });
+        await session.commitTransaction();
+        session.endSession();
+
+        return product;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error('Error updating product stock:', error);
+        throw error;
     }
 }
 
@@ -251,6 +291,7 @@ export {
     listProduct,
     removeProduct,
     updateProduct,
+    updateProductStock,
     searchProducts,
     singleProduct,
 }
