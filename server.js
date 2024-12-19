@@ -20,17 +20,7 @@ connectDB()
 
 // Middleware
 app.use(express.json())
-app.use(cors({
-    origin: [
-        'https://bloke-core-frontend.vercel.app',
-        'https://bloke-core-admin.vercel.app',
-        'http://localhost:5173',
-        'http://localhost:5174',
-        'https://surely-sunny-chow.ngrok-free.app', 
-    ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}))
+app.use(cors())
 connectCloudinary()
 
 // API endpoints
