@@ -1,7 +1,7 @@
 import { v2 as cloudinary } from "cloudinary";
-import productModel from "../models/productModel.js";
-import mongoose from "mongoose";
 import { nanoid } from "nanoid";
+import mongoose from "mongoose";
+import productModel from "../models/productModel.js";
 
 const addProduct = async (req, res) => {
     try {
@@ -58,12 +58,15 @@ const addProduct = async (req, res) => {
 
         const stock = req.body.stock ? parseInt(req.body.stock, 10) : 5;
 
+        const discountPercentage = req.body.discount ? parseFloat(req.body.discount) : 0;
+
         const newProduct = new productModel({
             id: `PRD-${nanoid(4)}-${nanoid(4)}`,
             name: req.body.name,
             description: req.body.description || '',
             price: parseFloat(req.body.price),
-            stock: Math.max(0, stock),
+            discount: discountPercentage,
+            stock: stock,
             images: imagesUrl,
             category: req.body.category,
             subCategory: req.body.subCategory,
@@ -146,11 +149,14 @@ const updateProduct = async (req, res) => {
         if (typeof updateData.metadata === 'string') {
             updateData.metadata = JSON.parse(updateData.metadata);
         }
-
+        
         if (updateData.stock !== undefined) {
             updateData.stock = Math.max(0, parseInt(updateData.stock, 10));
         }
-
+        
+        if (updateData.discount !== undefined) {
+            updateData.discount = Math.max(0, parseFloat(updateData.discount, 10));
+        }
 
         if (updateData.details && updateData.details.condition) {
             updateData.details.condition = updateData.details.condition
