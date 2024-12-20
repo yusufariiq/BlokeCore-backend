@@ -370,7 +370,7 @@ const sendVerificationEmail = async (email, link) => {
     });
 }
 
-const verifyEmail = async (req,res) => {
+const verifyEmail = async (req, res) => {
     try {
         const { token } = req.query;
         if (!token) {
@@ -380,15 +380,21 @@ const verifyEmail = async (req,res) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const userEmail = decoded.email;
 
+        const existingUser = await userModel.findOne({ email: userEmail });
+        
+        if (!existingUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (existingUser.verified) {
+            return res.status(404).json({ message: 'Account already verified' });
+        }
+
         const user = await userModel.findOneAndUpdate(
             { email: userEmail },
             { verified: true },
             { new: true }
         );
-
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
 
         res.status(200).json({ message: 'Email successfully verified' });
     } catch (error) {

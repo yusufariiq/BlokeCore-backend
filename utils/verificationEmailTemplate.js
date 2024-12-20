@@ -25,6 +25,7 @@ const verificationEmailTemplate = (verifyLink) => `
             <p style="text-align: center;">
                 <a href="${verifyLink}" class="button">Verify Email</a>
             </p>
+            <p><b>This link will expire in just one hour</b><p>
             <p>If the above button does not work for you, copy and paste the following into your browser's address bar:</p>
             <p style="word-break: break-all; color: #0000EE;">${verifyLink}</p>
         </div>
