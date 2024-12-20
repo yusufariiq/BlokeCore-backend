@@ -35,6 +35,10 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    verified: {
+        type: Boolean,
+        default: false
+    },
     cart: {
         type: mongoose.Schema.Types.Mixed,
         default: {}
@@ -43,7 +47,7 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ['local', 'google'],
         default: 'local'
-    }
+    },
 }, {
     timestamps: true,
     minimize: false

@@ -9,6 +9,7 @@ import { generateToken } from '../config/auth.js';
 import { OAuth2Client } from 'google-auth-library';
 
 import resetPasswordEmailTemplate from '../utils/resetPasswordTemplate.js';
+import verificationEmailTemplate from '../utils/verificationEmailTemplate.js';
 
 const FRONTEND_URL = process.env.FRONTEND_URL
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
@@ -78,7 +79,6 @@ const signupUser = async (req, res) => {
             return res.status(400).json({ errors });
         }
   
-        // Check if user already exists
         const existingUser = await userModel.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ 
@@ -89,8 +89,13 @@ const signupUser = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-  
-        // Create new user
+        
+        const verificationToken = jwt.sign(
+            { email: email }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1h' }
+        );
+
         const newUser = new userModel({
             firstName,
             lastName,
@@ -98,26 +103,24 @@ const signupUser = async (req, res) => {
             password: hashedPassword,
             phoneNumber,
             agreedToPolicy,
-            provider: 'local'
+            provider: 'local',
+            verified: false,
         });
   
         await newUser.save();
+
+        const verificationLink = `${FRONTEND_URL}/verify-email?token=${verificationToken}`;
+        await sendVerificationEmail(email, verificationLink);
     
         res.status(201).json({ 
-            message: 'User registered successfully',
-            user: {
-                id: newUser._id,
-                firstName: newUser.firstName,
-                lastName: newUser.lastName,
-                email: newUser.email,
-                phoneNumber: newUser.phoneNumber
-            }
+            message: 'Registration successful! Please check your email to verify your account before logging in.',
+            requireVerification: true,
         });
     } catch (error) {
         console.error('Signup Error:', error);
         res.status(500).json({ error: "Registration failed. Please try again." });
     }
-  };
+};
 
 const loginUser = async (req, res) => {
     try {
@@ -134,6 +137,13 @@ const loginUser = async (req, res) => {
         const user = await userModel.findOne({ email });
         if (!user) {
             return res.status(401).json({ error: "Invalid email or password" });
+        }
+
+        if (!user.verified) {
+            return res.status(403).json({ 
+                error: "Please verify your email before logging in",
+                unverified: true
+            });
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
@@ -180,7 +190,8 @@ const googleAuth = async (req, res) => {
                 firstName: given_name,
                 lastName: family_name,
                 agreedToPolicy: true,
-                provider: 'google'
+                provider: 'google',
+                verified: true,
             });
             await user.save();
         }
@@ -277,7 +288,7 @@ const forgotPassword = async (req, res) => {
         }
 
         const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
+        
         const transporter = nodemailer.createTransport({
             service: 'Gmail',
             auth: {
@@ -340,4 +351,58 @@ const resetPassword = async (req, res) => {
     }
 }
 
-export { loginUser, signupUser, googleAuth, updateProfile, forgotPassword, resetPassword };
+const sendVerificationEmail = async (email, link) => {
+    const emailHtml = verificationEmailTemplate(link);
+
+    const transporter = nodemailer.createTransport({
+        service: 'Gmail',
+        auth: {
+            user: EMAIL_USER, 
+            pass: EMAIL_PASS,
+        },
+    });
+
+    await transporter.sendMail({
+        from: EMAIL_USER,
+        to: email,
+        subject: "Verifiy your account",
+        html: emailHtml,
+    });
+}
+
+const verifyEmail = async (req,res) => {
+    try {
+        const { token } = req.query;
+        if (!token) {
+            return res.status(400).json({ message: 'Token is required'})
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const userEmail = decoded.email;
+
+        const user = await userModel.findOneAndUpdate(
+            { email: userEmail },
+            { verified: true },
+            { new: true }
+        );
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ message: 'Email successfully verified' });
+    } catch (error) {
+        console.log('Verify Email Error: ', error);
+        res.status(500).json({ message: `Failed to verify email. Try again.`})
+    }
+}
+
+export { 
+    loginUser,
+    signupUser,
+    googleAuth,
+    updateProfile,
+    forgotPassword,
+    resetPassword,
+    verifyEmail,
+};
