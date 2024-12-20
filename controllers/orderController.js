@@ -53,6 +53,25 @@ const placeOrderMidtrans = async (req, res) => {
             date: Date.now()
         });
 
+        const itemDetails = items.map((item) => {
+            const hasDiscount = item.discount > 0;
+            const discountedPrice = hasDiscount ? Math.round(item.price * (1 - item.discount / 100)) : Math.round(item.price);
+
+            return {
+                id: item.id,
+                price: discountedPrice,
+                quantity: item.quantity,
+                name: item.name,
+            };
+        });
+
+        itemDetails.push({
+            id: 'shipping',
+            price: roundedShippingPrice,
+            quantity: 1,
+            name: 'Shipping Cost'
+        });
+
         const transactionDetails = {
             transaction_details: {
                 order_id: newOrder.orderId,
@@ -64,20 +83,7 @@ const placeOrderMidtrans = async (req, res) => {
                 email: shippingAddress.email,
                 phone: shippingAddress.phone,
             },
-            item_details: [
-                ...items.map((item) => ({
-                    id: item.id,
-                    price: Math.round(item.price),
-                    quantity: item.quantity,
-                    name: item.name,
-                })),
-                {
-                    id: 'shipping',
-                    price: roundedShippingPrice,
-                    quantity: 1,
-                    name: 'Shipping Cost'
-                }
-            ]
+            item_details: itemDetails,
         };
 
         console.log(transactionDetails);
